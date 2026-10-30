@@ -22,8 +22,8 @@ export default function LoginModal({
   currentUser,
   onLoginSuccess
 }) {
-  const [email, setEmail] = useState('admin@srithanu.in');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
@@ -31,8 +31,14 @@ export default function LoginModal({
 
   const handleLogin = (e) => {
     e?.preventDefault();
+    if (!email.trim() || !password) {
+      setError('Please enter both email address and password');
+      return;
+    }
+
+    const trimmedEmail = email.toLowerCase().trim();
     const userMatch = AUTHORIZED_USERS.find(
-      u => u.email.toLowerCase() === email.toLowerCase().trim()
+      u => u.email.toLowerCase() === trimmedEmail && u.password === password
     );
 
     if (userMatch) {
@@ -40,23 +46,8 @@ export default function LoginModal({
       onLoginSuccess(userMatch);
       onClose();
     } else {
-      // Allow login with entered credentials as an authorized staff
-      const customUser = {
-        name: email.split('@')[0].toUpperCase(),
-        email,
-        role: 'Authorized Staff'
-      };
-      setError('');
-      onLoginSuccess(customUser);
-      onClose();
+      setError('Invalid email address or password. Please try again.');
     }
-  };
-
-  const handleSelectQuickUser = (user) => {
-    setEmail(user.email);
-    setPassword('••••••••');
-    onLoginSuccess(user);
-    onClose();
   };
 
   return (
@@ -250,10 +241,26 @@ export default function LoginModal({
               fontSize: '0.88rem',
               color: '#64748b',
               textAlign: 'center',
-              marginBottom: 24
+              marginBottom: 20
             }}>
               Sign in to access your account
             </p>
+
+            {error && (
+              <div style={{
+                padding: '10px 14px',
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: 8,
+                color: '#dc2626',
+                fontSize: '0.84rem',
+                fontWeight: 600,
+                marginBottom: 16,
+                textAlign: 'center'
+              }}>
+                {error}
+              </div>
+            )}
 
             {/* Login Form */}
             <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -273,9 +280,10 @@ export default function LoginModal({
                 }}>
                   <Mail size={18} color="#94a3b8" />
                   <input
-                    type="email"
+                    type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter username or email"
                     required
                     style={{
                       border: 'none',
@@ -307,6 +315,7 @@ export default function LoginModal({
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
                     required
                     style={{
                       border: 'none',
@@ -349,56 +358,22 @@ export default function LoginModal({
               </button>
             </form>
 
-            {/* Authorized Users Only Divider */}
+            {/* Authorized Personnel Notice */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 12,
-              margin: '20px 0 14px'
-            }}>
-              <div style={{ flex: 1, height: 1, backgroundColor: '#e2e8f0' }} />
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Authorized Users Only
-              </span>
-              <div style={{ flex: 1, height: 1, backgroundColor: '#e2e8f0' }} />
-            </div>
-
-            {/* Info Card with Authorized Users */}
-            <div style={{
-              backgroundColor: '#f0f7ff',
-              border: '1px solid #dbeafe',
-              borderRadius: 10,
+              justifyContent: 'center',
+              gap: 8,
+              marginTop: 24,
               padding: '12px 14px',
-              display: 'flex',
-              gap: 12
+              backgroundColor: '#f8fafc',
+              borderRadius: 10,
+              border: '1px solid #e2e8f0',
+              fontSize: '0.8rem',
+              color: '#64748b'
             }}>
-              <div style={{ color: '#1d68ed', marginTop: 2 }}>
-                <Users size={18} />
-              </div>
-              <div style={{ fontSize: '0.8rem', color: '#334155' }}>
-                <div style={{ fontWeight: 700, color: '#1d68ed', marginBottom: 4 }}>
-                  Only 2–3 authorized users can access this system:
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {AUTHORIZED_USERS.map((u, i) => (
-                    <button
-                      key={u.id}
-                      type="button"
-                      onClick={() => handleSelectQuickUser(u)}
-                      style={{
-                        textAlign: 'left',
-                        color: '#475569',
-                        padding: '2px 0',
-                        fontSize: '0.78rem'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = '#1d68ed'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = '#475569'}
-                    >
-                      {i + 1}. {u.role} ({u.email})
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <Shield size={16} color="#1d68ed" />
+              <span>Authorized personnel access only</span>
             </div>
           </div>
 

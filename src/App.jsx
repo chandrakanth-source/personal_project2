@@ -79,6 +79,17 @@ export default function App() {
     showToast(`Logged in as ${user.name} (${user.role})`);
   };
 
+  // Logout handler
+  const handleLogout = () => {
+    const updatedAuth = {
+      isLoggedIn: false,
+      user: null
+    };
+    setAuth(updatedAuth);
+    saveStoredAuth(updatedAuth);
+    showToast('Logged out successfully', 'info');
+  };
+
   // Toast Helper
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -123,6 +134,9 @@ export default function App() {
       <Sidebar
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
+        auth={auth}
+        onOpenLoginModal={() => setIsLoginModalOpen(true)}
+        onLogout={handleLogout}
       />
 
       {/* 2. Main Content Canvas */}
@@ -141,14 +155,22 @@ export default function App() {
           theme={theme}
           toggleTheme={toggleTheme}
           currentUser={auth.user}
+          isLoggedIn={auth.isLoggedIn}
           onOpenLoginModal={() => setIsLoginModalOpen(true)}
+          onLogout={handleLogout}
           onNavigateTab={setCurrentTab}
         />
 
         {/* Tab Views */}
         <main style={{ padding: '28px 36px', flex: 1 }}>
           {currentTab === 'home' && (
-            <HomeView onNavigateTab={setCurrentTab} />
+            <HomeView 
+              onNavigateTab={setCurrentTab}
+              auth={auth}
+              onLoginSuccess={handleLoginSuccess}
+              onLogout={handleLogout}
+              onOpenLoginModal={() => setIsLoginModalOpen(true)}
+            />
           )}
 
           {currentTab === 'stock' && (

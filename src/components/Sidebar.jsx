@@ -7,12 +7,19 @@ import {
   BarChart2, 
   Tag, 
   Settings,
-  Tv
+  Tv,
+  LogIn,
+  LogOut,
+  User,
+  Shield
 } from 'lucide-react';
 
 export default function Sidebar({ 
   currentTab, 
-  setCurrentTab
+  setCurrentTab,
+  auth,
+  onOpenLoginModal,
+  onLogout
 }) {
   const navItems = [
     { 
@@ -167,12 +174,126 @@ export default function Sidebar({
         })}
       </nav>
 
+      {/* Bottom Staff Portal & Account Status */}
+      <div style={{
+        padding: '12px 14px',
+        borderTop: '1px solid var(--sidebar-border)'
+      }}>
+        {auth?.isLoggedIn && auth?.user ? (
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 10,
+            padding: '10px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+              <div style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                backgroundColor: '#1d68ed',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff',
+                fontWeight: 700,
+                fontSize: '0.82rem',
+                flexShrink: 0
+              }}>
+                {auth.user.name ? auth.user.name.charAt(0).toUpperCase() : <User size={15} />}
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  color: '#ffffff',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>
+                  {auth.user.name}
+                </div>
+                <div style={{
+                  fontSize: '0.7rem',
+                  color: '#38bdf8',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>
+                  {auth.user.role || 'Staff'}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={onLogout}
+              title="Log Out"
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 6,
+                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#f87171',
+                cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+              }}
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={onOpenLoginModal}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              backgroundColor: '#1d68ed',
+              color: '#ffffff',
+              padding: '10px 14px',
+              borderRadius: 10,
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              boxShadow: '0 4px 12px rgba(29, 104, 237, 0.35)',
+              cursor: 'pointer',
+              border: 'none',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#1e40af';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#1d68ed';
+            }}
+          >
+            <LogIn size={15} />
+            <span>Staff Login</span>
+          </button>
+        )}
+      </div>
+
       {/* Footer subtle tag */}
       <div style={{
-        padding: '18px 20px',
+        padding: '14px 20px',
         fontSize: '0.72rem',
-        color: '#64748b',
-        borderTop: '1px solid var(--sidebar-border)'
+        color: '#64748b'
       }}>
         © 2026 Sri Thanu Communications
       </div>

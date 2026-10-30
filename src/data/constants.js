@@ -299,33 +299,19 @@ export const AUTHORIZED_USERS = [
   {
     id: 'u-1',
     role: 'Admin (owner)',
-    name: 'Admin',
-    email: 'admin@srithanu.in',
-    password: 'admin'
-  },
-  {
-    id: 'u-2',
-    role: 'Staff Member 1',
-    name: 'Staff Member 1',
-    email: 'staff1@srithanu.in',
-    password: 'staff'
-  },
-  {
-    id: 'u-3',
-    role: 'Staff Member 2',
-    name: 'Staff Member 2',
-    email: 'staff2@srithanu.in',
-    password: 'staff'
+    name: 'Chandrakanth',
+    email: 'chandrakanthyaddhula@gmail.com',
+    password: 'XttupL&i25@'
   }
 ];
 
 export const DEFAULT_SETTINGS = {
   shopName: 'Sri Thanu Communications',
   tagline: 'Your one-stop shop for computers, accessories and IT solutions',
-  ownerName: 'Admin',
+  ownerName: 'Chandrakanth',
   role: 'Admin',
   phone: '+91 98765 43210',
-  email: 'admin@srithanu.in',
+  email: 'chandrakanthyaddhula@gmail.com',
   address: 'Shop No. 12, Tech Commercial Plaza, Main Road',
   gstNumber: '36AAACS1234F1ZP',
   currency: '₹',

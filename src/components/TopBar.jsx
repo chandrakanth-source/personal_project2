@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Bell, ChevronDown, User, LogOut, Sun, Moon, Shield } from 'lucide-react';
+import { Search, Bell, ChevronDown, User, LogOut, LogIn, Sun, Moon, Shield } from 'lucide-react';
 
 export default function TopBar({
   searchQuery,
@@ -7,7 +7,9 @@ export default function TopBar({
   theme,
   toggleTheme,
   currentUser,
+  isLoggedIn,
   onOpenLoginModal,
+  onLogout,
   onNavigateTab
 }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -135,141 +137,213 @@ export default function TopBar({
           )}
         </div>
 
-        {/* User Profile Pill matching screenshot */}
-        <div style={{ position: 'relative' }}>
+        {/* User Profile Pill or Login Button */}
+        {isLoggedIn && currentUser ? (
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => {
+                setShowProfileMenu(!showProfileMenu);
+                setShowNotifications(false);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '6px 12px',
+                borderRadius: 10,
+                backgroundColor: 'var(--bg-subtle)',
+                border: '1px solid var(--border-color)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <div style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                backgroundColor: '#1d68ed',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff',
+                fontWeight: 700,
+                fontSize: '0.85rem'
+              }}>
+                {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : <User size={16} />}
+              </div>
+              <div style={{ textAlign: 'left', lineHeight: 1.2 }}>
+                <span style={{
+                  fontSize: '0.88rem',
+                  fontWeight: 700,
+                  color: 'var(--text-main)',
+                  display: 'block'
+                }}>
+                  {currentUser.name}
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 600 }}>
+                  Online
+                </span>
+              </div>
+              <ChevronDown size={15} color="#64748b" />
+            </button>
+
+            {/* Profile Dropdown */}
+            {showProfileMenu && (
+              <div style={{
+                position: 'absolute',
+                top: 52,
+                right: 0,
+                width: 240,
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 12,
+                boxShadow: 'var(--shadow-dropdown)',
+                padding: '12px 8px',
+                zIndex: 50
+              }}>
+                <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-color)', marginBottom: 6 }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{currentUser.name}</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{currentUser.email}</div>
+                  <div style={{ 
+                    marginTop: 6, 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: 4, 
+                    fontSize: '0.72rem', 
+                    color: '#1d68ed', 
+                    backgroundColor: '#eff6ff', 
+                    padding: '2px 8px', 
+                    borderRadius: 6,
+                    fontWeight: 600
+                  }}>
+                    <Shield size={12} /> {currentUser.role || 'Authorized Staff'}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    onOpenLoginModal();
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: 8,
+                    fontSize: '0.86rem',
+                    color: 'var(--text-main)',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-subtle)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <User size={16} color="#1d68ed" />
+                  <span>Switch Account / Sign In</span>
+                </button>
+
+                <button
+                  onClick={toggleTheme}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: 8,
+                    fontSize: '0.86rem',
+                    color: 'var(--text-main)',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-subtle)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  {theme === 'dark' ? <Sun size={16} color="#f59e0b" /> : <Moon size={16} color="#64748b" />}
+                  <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    onNavigateTab('settings');
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: 8,
+                    fontSize: '0.86rem',
+                    color: 'var(--text-main)',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-subtle)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <Shield size={16} color="#10b981" />
+                  <span>Shop Settings</span>
+                </button>
+
+                <div style={{ height: 1, backgroundColor: 'var(--border-color)', margin: '6px 0' }} />
+
+                <button
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    onLogout?.();
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: 8,
+                    fontSize: '0.86rem',
+                    color: '#ef4444',
+                    fontWeight: 600,
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <LogOut size={16} color="#ef4444" />
+                  <span>Log Out</span>
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
           <button
-            onClick={() => {
-              setShowProfileMenu(!showProfileMenu);
-              setShowNotifications(false);
-            }}
+            onClick={onOpenLoginModal}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 10,
-              padding: '6px 10px',
-              borderRadius: 10
+              gap: 8,
+              backgroundColor: '#1d68ed',
+              color: '#ffffff',
+              padding: '9px 18px',
+              borderRadius: 10,
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              boxShadow: '0 4px 12px rgba(29, 104, 237, 0.3)',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#1e40af';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#1d68ed';
+              e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
-            <div style={{
-              width: 34,
-              height: 34,
-              borderRadius: '50%',
-              backgroundColor: '#1d68ed',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff'
-            }}>
-              <User size={18} />
-            </div>
-            <span style={{
-              fontSize: '0.92rem',
-              fontWeight: 600,
-              color: 'var(--text-main)'
-            }}>
-              {currentUser?.name || 'Admin'}
-            </span>
-            <ChevronDown size={16} color="#64748b" />
+            <LogIn size={17} />
+            <span>Staff Login</span>
           </button>
-
-          {/* Profile Dropdown */}
-          {showProfileMenu && (
-            <div style={{
-              position: 'absolute',
-              top: 52,
-              right: 0,
-              width: 240,
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-color)',
-              borderRadius: 12,
-              boxShadow: 'var(--shadow-dropdown)',
-              padding: '12px 8px',
-              zIndex: 50
-            }}>
-              <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-color)', marginBottom: 6 }}>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{currentUser?.name || 'Admin'}</div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{currentUser?.email || 'admin@srithanu.in'}</div>
-                <div style={{ 
-                  marginTop: 6, 
-                  display: 'inline-flex', 
-                  alignItems: 'center', 
-                  gap: 4, 
-                  fontSize: '0.72rem', 
-                  color: '#1d68ed', 
-                  backgroundColor: '#eff6ff', 
-                  padding: '2px 8px', 
-                  borderRadius: 6,
-                  fontWeight: 600
-                }}>
-                  <Shield size={12} /> {currentUser?.role || 'Admin (owner)'}
-                </div>
-              </div>
-
-              <button
-                onClick={() => {
-                  setShowProfileMenu(false);
-                  onOpenLoginModal();
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  width: '100%',
-                  padding: '9px 12px',
-                  borderRadius: 8,
-                  fontSize: '0.86rem',
-                  color: 'var(--text-main)'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-subtle)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                <User size={16} color="#1d68ed" />
-                <span>Switch User / Login</span>
-              </button>
-
-              <button
-                onClick={toggleTheme}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  width: '100%',
-                  padding: '9px 12px',
-                  borderRadius: 8,
-                  fontSize: '0.86rem',
-                  color: 'var(--text-main)'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-subtle)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                {theme === 'dark' ? <Sun size={16} color="#f59e0b" /> : <Moon size={16} color="#64748b" />}
-                <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setShowProfileMenu(false);
-                  onNavigateTab('settings');
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  width: '100%',
-                  padding: '9px 12px',
-                  borderRadius: 8,
-                  fontSize: '0.86rem',
-                  color: 'var(--text-main)'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-subtle)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                <Shield size={16} color="#10b981" />
-                <span>Shop Settings</span>
-              </button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </header>
   );

@@ -108,12 +108,8 @@ export function getStoredAuth() {
     console.error('Error reading auth:', e);
   }
   return {
-    isLoggedIn: true,
-    user: {
-      name: 'Admin',
-      role: 'Admin (owner)',
-      email: 'admin@srithanu.in'
-    }
+    isLoggedIn: false,
+    user: null
   };
 }
 

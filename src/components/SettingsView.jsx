@@ -1,18 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
-  Settings, 
   Store, 
-  Receipt, 
   DollarSign, 
   Database, 
   Download, 
   Upload, 
   RotateCcw, 
   CheckCircle,
-  AlertTriangle,
   Save
 } from 'lucide-react';
-import { INITIAL_PRODUCTS, DEFAULT_SETTINGS } from '../data/constants';
 
 export default function SettingsView({ 
   settings, 
@@ -24,6 +20,10 @@ export default function SettingsView({
 }) {
   const [formData, setFormData] = useState({ ...settings });
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  useEffect(() => {
+    setFormData({ ...settings });
+  }, [settings]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -68,7 +68,27 @@ export default function SettingsView({
     reader.onload = (event) => {
       try {
         const imported = JSON.parse(event.target.result);
-        if (imported.products && Array.isArray(imported.products)) {
+        const validProducts = Array.isArray(imported.products) &&
+          imported.products.every(product =>
+            product &&
+            typeof product.id === 'string' &&
+            typeof product.name === 'string' &&
+            Number.isFinite(Number(product.quantity)) &&
+            Number.isFinite(Number(product.price))
+          );
+        const validSales = imported.sales === undefined || (
+          Array.isArray(imported.sales) &&
+          imported.sales.every(sale =>
+            sale &&
+            typeof sale.invoiceNumber === 'string' &&
+            Number.isFinite(Number(sale.total)) &&
+            Array.isArray(sale.items)
+          )
+        );
+        const validSettings = imported.shopSettings === undefined ||
+          (imported.shopSettings && typeof imported.shopSettings === 'object' && !Array.isArray(imported.shopSettings));
+
+        if (validProducts && validSales && validSettings) {
           if (confirm(`Import database with ${imported.products.length} products and ${(imported.sales || []).length} sales records?`)) {
             onImportDatabase(imported);
             alert('Database restored successfully!');

@@ -1,34 +1,46 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { 
   BarChart2, 
   TrendingUp, 
-  Calendar, 
-  DollarSign, 
-  ShoppingBag, 
-  FileText, 
-  Download, 
-  ArrowUpRight,
-  Receipt
+  Calendar
 } from 'lucide-react';
 
-export default function DailyReportsView({ sales = [], products = [], settings }) {
+export default function DailyReportsView({ sales = [], settings }) {
   const [timeRange, setTimeRange] = useState('7days');
   const currency = settings?.currency || '₹';
-
-  // Demo daily trends data
-  const dailyData = [
-    { date: 'Today', amount: 54990, orders: 3, items: 3 },
-    { date: 'Yesterday', amount: 38400, orders: 4, items: 6 },
-    { date: 'Oct 21', amount: 46200, orders: 5, items: 7 },
-    { date: 'Oct 20', amount: 62500, orders: 6, items: 9 },
-    { date: 'Oct 19', amount: 29800, orders: 3, items: 5 },
-    { date: 'Oct 18', amount: 51200, orders: 5, items: 8 },
-    { date: 'Oct 17', amount: 41000, orders: 4, items: 6 }
-  ];
-
-  const totalSalesWeek = dailyData.reduce((acc, d) => acc + d.amount, 0);
-  const totalOrdersWeek = dailyData.reduce((acc, d) => acc + d.orders, 0);
-  const maxAmount = Math.max(...dailyData.map(d => d.amount));
+  const rangeDays = timeRange === '30days' ? 30 : timeRange === 'all' ? null : 7;
+  const [now] = useState(() => new Date());
+  const startTime = rangeDays ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - rangeDays + 1).getTime() : 0;
+  const filteredSales = useMemo(
+    () => sales.filter(sale => Number(sale.timestamp) >= startTime),
+    [sales, startTime]
+  );
+  const dailyData = useMemo(() => {
+    const days = rangeDays || 7;
+    return Array.from({ length: days }, (_, index) => {
+      const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - days + index + 1);
+      const start = date.getTime();
+      const end = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1).getTime();
+      const daySales = filteredSales.filter(sale => Number(sale.timestamp) >= start && Number(sale.timestamp) < end);
+      return {
+        date: date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+        amount: daySales.reduce((sum, sale) => sum + (Number(sale.total) || 0), 0),
+        orders: daySales.length,
+        items: daySales.reduce((sum, sale) => sum + sale.items.reduce((itemSum, item) => itemSum + (Number(item.quantity) || 0), 0), 0)
+      };
+    });
+  }, [filteredSales, rangeDays, now]);
+  const totalSalesWeek = filteredSales.reduce((acc, sale) => acc + (Number(sale.total) || 0), 0);
+  const totalOrdersWeek = filteredSales.length;
+  const maxAmount = Math.max(...dailyData.map(d => d.amount), 1);
+  const todayKey = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const todaySales = filteredSales.filter(sale => Number(sale.timestamp) >= todayKey);
+  const todayRevenue = todaySales.reduce((sum, sale) => sum + (Number(sale.total) || 0), 0);
+  const categoryTotals = {};
+  filteredSales.forEach(sale => sale.items.forEach(item => {
+    categoryTotals[item.category] = (categoryTotals[item.category] || 0) + (Number(item.quantity) || 0);
+  }));
+  const topCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0]?.[0] || 'No sales yet';
 
   return (
     <div style={{
@@ -99,7 +111,11 @@ export default function DailyReportsView({ sales = [], products = [], settings }
           color: 'var(--text-main)'
         }}>
           <Calendar size={16} color="#1d68ed" />
-          <span>Last 7 Days</span>
+          <select value={timeRange} onChange={(event) => setTimeRange(event.target.value)} style={{ border: 'none', background: 'transparent', fontWeight: 600, color: 'var(--text-main)' }}>
+            <option value="7days">Last 7 Days</option>
+            <option value="30days">Last 30 Days</option>
+            <option value="all">All Time</option>
+          </select>
         </div>
       </div>
 
@@ -118,10 +134,10 @@ export default function DailyReportsView({ sales = [], products = [], settings }
         }}>
           <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Today's Revenue</div>
           <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#1e3a8a', marginTop: 4 }}>
-            {currency} 54,990
+            {currency} {todayRevenue.toLocaleString('en-IN')}
           </div>
           <div style={{ fontSize: '0.75rem', color: '#16a34a', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <TrendingUp size={14} /> +18.4% vs yesterday
+            <TrendingUp size={14} /> {todaySales.length} invoices today
           </div>
         </div>
 
@@ -150,7 +166,7 @@ export default function DailyReportsView({ sales = [], products = [], settings }
         }}>
           <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Average Order Value</div>
           <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#0f172a', marginTop: 4 }}>
-            {currency} {Math.round(totalSalesWeek / totalOrdersWeek).toLocaleString('en-IN')}
+            {currency} {totalOrdersWeek ? Math.round(totalSalesWeek / totalOrdersWeek).toLocaleString('en-IN') : '0'}
           </div>
           <div style={{ fontSize: '0.75rem', color: '#16a34a', marginTop: 4 }}>
             High average ticket size
@@ -166,10 +182,10 @@ export default function DailyReportsView({ sales = [], products = [], settings }
         }}>
           <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Top Selling Category</div>
           <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#1d68ed', marginTop: 4 }}>
-            Laptops
+            {topCategory}
           </div>
           <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 4 }}>
-            62% of shop sales volume
+            Based on units sold
           </div>
         </div>
       </div>
@@ -219,7 +235,7 @@ export default function DailyReportsView({ sales = [], products = [], settings }
                 justifyContent: 'flex-end'
               }}>
                 <div style={{ fontSize: '0.72rem', fontWeight: 700, color: isToday ? '#1d68ed' : '#64748b' }}>
-                  ₹{(d.amount / 1000).toFixed(1)}k
+                  {currency}{(d.amount / 1000).toFixed(1)}k
                 </div>
 
                 <div
@@ -232,7 +248,7 @@ export default function DailyReportsView({ sales = [], products = [], settings }
                     transition: 'all 0.3s ease',
                     cursor: 'pointer'
                   }}
-                  title={`${d.date}: ₹${d.amount.toLocaleString('en-IN')}`}
+                  title={`${d.date}: ${currency}${d.amount.toLocaleString('en-IN')}`}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isToday ? '#1d68ed' : '#cbd5e1'}
                 />

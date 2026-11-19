@@ -22,8 +22,10 @@ import {
   getStoredAuth,
   saveStoredAuth
 } from './utils/storage';
-import { DEFAULT_SETTINGS } from './data/constants';
+import { INITIAL_PRODUCTS } from './data/constants';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
+
+const PROTECTED_TABS = ['stock', 'billing', 'reports', 'settings'];
 
 export default function App() {
   // Navigation Tabs: 'home' | 'stock' | 'website' | 'billing' | 'reports' | 'catalog' | 'settings'
@@ -42,6 +44,13 @@ export default function App() {
 
   // Toast State
   const [toast, setToast] = useState(null);
+  const handleNavigateTab = (tab) => {
+    if (PROTECTED_TABS.includes(tab) && !auth.isLoggedIn) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+    setCurrentTab(tab);
+  };
 
   // Apply Theme to DOM
   useEffect(() => {
@@ -86,6 +95,7 @@ export default function App() {
       user: null
     };
     setAuth(updatedAuth);
+    setCurrentTab('home');
     saveStoredAuth(updatedAuth);
     showToast('Logged out successfully', 'info');
   };
@@ -133,7 +143,7 @@ export default function App() {
       {/* 1. Sidebar Navigation */}
       <Sidebar
         currentTab={currentTab}
-        setCurrentTab={setCurrentTab}
+        setCurrentTab={handleNavigateTab}
         auth={auth}
         onOpenLoginModal={() => setIsLoginModalOpen(true)}
         onLogout={handleLogout}
@@ -165,7 +175,7 @@ export default function App() {
         <main style={{ padding: '28px 36px', flex: 1 }}>
           {currentTab === 'home' && (
             <HomeView 
-              onNavigateTab={setCurrentTab}
+              onNavigateTab={handleNavigateTab}
               auth={auth}
               onLoginSuccess={handleLoginSuccess}
               onLogout={handleLogout}
@@ -218,6 +228,11 @@ export default function App() {
               onSaveSettings={handleSaveSettings}
               products={products}
               sales={sales}
+              onResetToSample={() => {
+                const resetProducts = INITIAL_PRODUCTS.map(product => ({ ...product }));
+                handleSaveProducts(resetProducts);
+                showToast('Inventory reset to the default sample products.');
+              }}
               onImportDatabase={(imported) => {
                 if (imported.products) handleSaveProducts(imported.products);
                 if (imported.sales) handleSaveSales(imported.sales);

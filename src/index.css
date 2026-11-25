@@ -183,6 +183,35 @@ input, select, textarea {
     margin: 0;
   }
 
+  /* Responsive application layout */
+  @media (max-width: 900px) {
+    .app-shell {
+      display: block !important;
+    }
+
+    .app-sidebar {
+      width: 100% !important;
+      min-width: 0 !important;
+      min-height: auto !important;
+      position: sticky !important;
+      top: 0;
+    }
+
+    .app-sidebar nav {
+      flex-direction: row !important;
+      overflow-x: auto;
+    }
+
+    .app-sidebar nav button {
+      width: auto !important;
+      min-width: max-content;
+    }
+
+    .app-sidebar > div:last-child {
+      display: none;
+    }
+  }
+
   body * {
     visibility: hidden;
   }

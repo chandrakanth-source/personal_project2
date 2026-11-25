@@ -1,16 +1,27 @@
-# React + Vite
+# Sri Thanu Communications
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React/Vite shop management app for inventory, invoicing, sales reports, store settings, and a product catalog.
 
-Currently, two official plugins are available:
+## Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Install dependencies:
 
-## React Compiler
+   `npm install`
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+2. Run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL editor.
 
-## Expanding the Oxlint configuration
+3. Create an email/password user in Supabase Authentication for the shop administrator.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+4. Copy `.env.example` to `.env.local` and add the Supabase project URL and public anon/publishable key.
+
+5. Start the app:
+
+   `npm run dev`
+
+## Validation
+
+- `npm test` - billing unit tests
+- `npm run lint` - Oxlint diagnostics
+- `npm run build` - production build
+
+Never place a Supabase service-role key in this browser application.

@@ -21,6 +21,7 @@ import {
 import confetti from 'canvas-confetti';
 import { CATEGORIES } from '../data/constants';
 import { generateInvoicePDF } from '../utils/pdfGenerator';
+import { calculateBill, clamp, createInvoiceNumber } from '../utils/billing';
 
 export default function POSBillingView({ 
   products, 
@@ -43,6 +44,7 @@ export default function POSBillingView({
 
   const currency = settings.currency || '$';
   const taxRate = settings.taxRate || 5;
+  const safeDiscountPercent = clamp(discountPercent, 0, 100);
 
   // Filter products for the POS catalog
   const filteredProducts = useMemo(() => {
@@ -119,22 +121,11 @@ export default function POSBillingView({
   };
 
   // Totals calculations
-  const subtotal = useMemo(() => {
-    return cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  }, [cart]);
-
-  const discountAmount = useMemo(() => {
-    return (subtotal * (discountPercent / 100));
-  }, [subtotal, discountPercent]);
-
-  const taxableAmount = Math.max(0, subtotal - discountAmount);
-
-  const taxAmount = useMemo(() => {
-    if (!applyTax) return 0;
-    return (taxableAmount * (taxRate / 100));
-  }, [taxableAmount, applyTax, taxRate]);
-
-  const grandTotal = taxableAmount + taxAmount;
+  const totals = useMemo(
+    () => calculateBill(cart, safeDiscountPercent, taxRate, applyTax),
+    [cart, safeDiscountPercent, taxRate, applyTax]
+  );
+  const { subtotal, discountAmount, taxAmount, total: grandTotal } = totals;
 
   // Checkout handler
   const handleCheckout = () => {
@@ -145,14 +136,14 @@ export default function POSBillingView({
 
     const saleRecord = {
       id: `sale-${Date.now()}`,
-      invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
+      invoiceNumber: createInvoiceNumber('INV', 0),
       timestamp: Date.now(),
       customerName: customerName.trim() || 'Walk-in Customer',
       customerPhone: customerPhone.trim() || '',
       paymentMethod,
       items: [...cart],
       subtotal,
-      discountPercent: Number(discountPercent) || 0,
+      discountPercent: safeDiscountPercent,
       discountAmount,
       taxRate: applyTax ? taxRate : 0,
       taxAmount,

@@ -1,5 +1,14 @@
 import jsPDF from 'jspdf';
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
 export function generateInvoicePDF(sale, settings) {
   try {
     const doc = new jsPDF({
@@ -173,8 +182,8 @@ export function printInvoice(sale, settings = {}) {
       <tr>
         <td style="padding: 8px 6px; border-bottom: 1px solid #e2e8f0; text-align: center;">${idx + 1}</td>
         <td style="padding: 8px 6px; border-bottom: 1px solid #e2e8f0;">
-          <strong>${item.name}</strong>
-          ${item.brand ? `<div style="font-size: 11px; color: #64748b;">Brand: ${item.brand}</div>` : ''}
+          <strong>${escapeHtml(item.name)}</strong>
+          ${item.brand ? `<div style="font-size: 11px; color: #64748b;">Brand: ${escapeHtml(item.brand)}</div>` : ''}
         </td>
         <td style="padding: 8px 6px; border-bottom: 1px solid #e2e8f0; text-align: center;">${item.warranty ? `${item.warranty} mo` : '-'}</td>
         <td style="padding: 8px 6px; border-bottom: 1px solid #e2e8f0; text-align: center; font-weight: 600;">${item.quantity}</td>
@@ -188,7 +197,7 @@ export function printInvoice(sale, settings = {}) {
       <html>
       <head>
         <meta charset="utf-8">
-        <title>Invoice #${sale.invoiceNumber} - ${settings.shopName || 'Sri Sai Computers'}</title>
+        <title>Invoice #${escapeHtml(sale.invoiceNumber)} - ${escapeHtml(settings.shopName || 'Sri Sai Computers')}</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 24px; color: #0f172a; background: #ffffff; }
           .invoice-card { max-width: 780px; margin: 0 auto; border: 1px solid #cbd5e1; border-radius: 8px; padding: 28px; }
@@ -221,14 +230,14 @@ export function printInvoice(sale, settings = {}) {
         <div class="invoice-card">
           <div class="header">
             <div>
-              <h1 class="shop-title">${settings.shopName || 'Sri Sai Computers'}</h1>
-              <div class="shop-sub">${settings.tagline || 'Shop Management System'}</div>
-              <div class="shop-sub">${settings.address || 'Main Road'} | Ph: ${settings.phone || '9876543210'}</div>
-              ${settings.gstNumber ? `<div class="shop-sub"><strong>GSTIN / Tax:</strong> ${settings.gstNumber}</div>` : ''}
+              <h1 class="shop-title">${escapeHtml(settings.shopName || 'Sri Sai Computers')}</h1>
+              <div class="shop-sub">${escapeHtml(settings.tagline || 'Shop Management System')}</div>
+              <div class="shop-sub">${escapeHtml(settings.address || 'Main Road')} | Ph: ${escapeHtml(settings.phone || '9876543210')}</div>
+              ${settings.gstNumber ? `<div class="shop-sub"><strong>GSTIN / Tax:</strong> ${escapeHtml(settings.gstNumber)}</div>` : ''}
             </div>
             <div class="inv-badge">
               <h2>TAX INVOICE</h2>
-              <div class="meta-text"><strong>Invoice #:</strong> ${sale.invoiceNumber}</div>
+              <div class="meta-text"><strong>Invoice #:</strong> ${escapeHtml(sale.invoiceNumber)}</div>
               <div class="meta-text"><strong>Date:</strong> ${new Date(sale.timestamp).toLocaleDateString()} ${new Date(sale.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
               <div class="meta-text"><strong>Payment:</strong> ${sale.paymentMethod || 'Cash'}</div>
             </div>
@@ -237,12 +246,12 @@ export function printInvoice(sale, settings = {}) {
           <div class="info-grid">
             <div>
               <strong>Billed To Customer:</strong>
-              <div><strong>${sale.customerName || 'Walk-in Customer'}</strong></div>
-              ${sale.customerPhone ? `<div>Phone: ${sale.customerPhone}</div>` : ''}
+              <div><strong>${escapeHtml(sale.customerName || 'Walk-in Customer')}</strong></div>
+              ${sale.customerPhone ? `<div>Phone: ${escapeHtml(sale.customerPhone)}</div>` : ''}
             </div>
             <div style="text-align: right;">
               <strong>Authorized Shop:</strong>
-              <div>${settings.shopName || 'Sri Sai Computers'}</div>
+              <div>${escapeHtml(settings.shopName || 'Sri Sai Computers')}</div>
             </div>
           </div>
 
@@ -288,7 +297,7 @@ export function printInvoice(sale, settings = {}) {
           </div>
 
           <div class="footer">
-            <div>${settings.invoiceFooterNote || 'Thank you for your business! Warranty claims subject to manufacturer terms.'}</div>
+            <div>${escapeHtml(settings.invoiceFooterNote || 'Thank you for your business! Warranty claims subject to manufacturer terms.')}</div>
           </div>
         </div>
         <script>

@@ -295,16 +295,6 @@ export const PRODUCT_CONFIG_SCHEMAS = {
   }
 };
 
-export const AUTHORIZED_USERS = [
-  {
-    id: 'u-1',
-    role: 'Admin (owner)',
-    name: 'Chandrakanth',
-    email: 'chandrakanthyaddhula@gmail.com',
-    password: 'XttupL&i25@'
-  }
-];
-
 export const DEFAULT_SETTINGS = {
   shopName: 'Sri Thanu Communications',
   tagline: 'Your one-stop shop for computers, accessories and IT solutions',

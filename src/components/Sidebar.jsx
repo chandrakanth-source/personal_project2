@@ -60,7 +60,7 @@ export default function Sidebar({
   ];
 
   return (
-    <aside style={{
+    <aside className="app-sidebar" style={{
       width: 250,
       minWidth: 250,
       backgroundColor: 'var(--sidebar-bg)',

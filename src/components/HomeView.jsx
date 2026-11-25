@@ -24,7 +24,6 @@ import {
   Sparkles,
   CheckCircle2
 } from 'lucide-react';
-import { AUTHORIZED_USERS } from '../data/constants';
 
 export default function HomeView({ 
   onNavigateTab, 
@@ -41,23 +40,18 @@ export default function HomeView({
   const isLoggedIn = auth?.isLoggedIn;
   const currentUser = auth?.user;
 
-  const handleFormLogin = (e) => {
+  const handleFormLogin = async (e) => {
     e?.preventDefault();
     if (!email.trim() || !password) {
       setError('Please enter both username/email and password');
       return;
     }
 
-    const trimmedEmail = email.toLowerCase().trim();
-    const userMatch = AUTHORIZED_USERS.find(
-      u => u.email.toLowerCase() === trimmedEmail && u.password === password
-    );
-
-    if (userMatch) {
+    try {
+      await onLoginSuccess(email, password);
       setError('');
-      onLoginSuccess?.(userMatch);
-    } else {
-      setError('Invalid username/email or password. Please try again.');
+    } catch (error) {
+      setError(error.message || 'Invalid username/email or password. Please try again.');
     }
   };
 

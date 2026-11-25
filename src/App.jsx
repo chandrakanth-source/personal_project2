@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
-import HomeView from './components/HomeView';
-import StockMaintenanceView from './components/StockMaintenanceView';
-import WebsiteView from './components/WebsiteView';
-import BillingView from './components/BillingView';
-import DailyReportsView from './components/DailyReportsView';
-import ProductsWeSellView from './components/ProductsWeSellView';
-import SettingsView from './components/SettingsView';
 import LoginModal from './components/LoginModal';
+import HomeView from './components/HomeView';
+
+const StockMaintenanceView = lazy(() => import('./components/StockMaintenanceView'));
+const WebsiteView = lazy(() => import('./components/WebsiteView'));
+const BillingView = lazy(() => import('./components/BillingView'));
+const DailyReportsView = lazy(() => import('./components/DailyReportsView'));
+const ProductsWeSellView = lazy(() => import('./components/ProductsWeSellView'));
+const SettingsView = lazy(() => import('./components/SettingsView'));
 
 import { 
   getStoredProducts, 
@@ -24,6 +25,17 @@ import {
 } from './utils/storage';
 import { INITIAL_PRODUCTS } from './data/constants';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from './lib/supabase';
+import {
+  ensureProfile,
+  getSession,
+  loadShopDatabase,
+  saveProducts,
+  saveSales,
+  saveSettings,
+  signIn,
+  signOut
+} from './lib/shopRepository';
 
 const PROTECTED_TABS = ['stock', 'billing', 'reports', 'settings'];
 
@@ -36,11 +48,62 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Auth State
-  const [auth, setAuth] = useState(() => getStoredAuth());
+  const [auth, setAuth] = useState(() =>
+    isSupabaseConfigured ? { isLoggedIn: false, user: null } : getStoredAuth()
+  );
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   // Theme State
   const [theme, setTheme] = useState(() => getStoredTheme());
+
+  useEffect(() => {
+    let active = true;
+
+    const restoreSupabaseSession = async () => {
+      if (!isSupabaseConfigured) return;
+      try {
+        const session = await getSession();
+        if (!active) return;
+
+        if (session?.user) {
+          const profile = await ensureProfile(session.user);
+          setAuth({
+            isLoggedIn: true,
+            user: {
+              id: session.user.id,
+              name: profile?.name || 'Shop Admin',
+              role: profile?.role || 'Admin',
+              email: session.user.email
+            }
+          });
+
+          const database = await loadShopDatabase();
+          if (database && active) {
+            if (database.products.length > 0) setProducts(database.products);
+            if (database.sales) setSales(database.sales);
+            if (database.shopSettings) setSettings(database.shopSettings);
+          }
+        }
+      } catch (error) {
+        console.error('Unable to restore Supabase session:', error);
+      }
+    };
+
+    restoreSupabaseSession();
+
+    const subscription = isSupabaseConfigured
+      ? supabase.auth.onAuthStateChange((_event, session) => {
+          if (!session?.user) {
+            setAuth({ isLoggedIn: false, user: null });
+          }
+        })
+      : null;
+
+    return () => {
+      active = false;
+      subscription?.data?.subscription?.unsubscribe();
+    };
+  }, []);
 
   // Toast State
   const [toast, setToast] = useState(null);
@@ -61,31 +124,74 @@ export default function App() {
   // Persist Products
   const handleSaveProducts = (newProducts) => {
     setProducts(newProducts);
-    saveStoredProducts(newProducts);
+    const localSaved = saveStoredProducts(newProducts);
+    if (isSupabaseConfigured && auth.isLoggedIn) {
+      saveProducts(newProducts).catch((error) => {
+        console.error('Unable to save products to Supabase:', error);
+        showToast('Saved locally, but cloud sync failed.', 'danger');
+      });
+    }
+    if (!localSaved) showToast('Unable to save data in this browser.', 'danger');
   };
 
   // Persist Sales
   const handleSaveSales = (newSales) => {
     setSales(newSales);
-    saveStoredSales(newSales);
+    const localSaved = saveStoredSales(newSales);
+    if (isSupabaseConfigured && auth.isLoggedIn) {
+      saveSales(newSales).catch((error) => {
+        console.error('Unable to save sales to Supabase:', error);
+        showToast('Saved locally, but cloud sync failed.', 'danger');
+      });
+    }
+    if (!localSaved) showToast('Unable to save data in this browser.', 'danger');
   };
 
   // Persist Settings
   const handleSaveSettings = (newSettings) => {
     setSettings(newSettings);
     saveStoredSettings(newSettings);
+    if (isSupabaseConfigured && auth.isLoggedIn) {
+      saveSettings(newSettings).catch((error) => {
+        console.error('Unable to save settings to Supabase:', error);
+        showToast('Saved locally, but cloud sync failed.', 'danger');
+      });
+    }
     showToast('Shop settings updated successfully!');
   };
 
   // Login handler
-  const handleLoginSuccess = (user) => {
-    const updatedAuth = {
-      isLoggedIn: true,
-      user
-    };
-    setAuth(updatedAuth);
-    saveStoredAuth(updatedAuth);
-    showToast(`Logged in as ${user.name} (${user.role})`);
+  const handleLoginSuccess = async (credentialsOrUser, password) => {
+    try {
+      if (isSupabaseConfigured && typeof credentialsOrUser === 'string') {
+        const user = await signIn(credentialsOrUser, password);
+        const profile = await ensureProfile(user);
+        const updatedAuth = {
+          isLoggedIn: true,
+          user: {
+            id: user.id,
+            name: profile?.name || 'Shop Admin',
+            role: profile?.role || 'Admin',
+            email: user.email
+          }
+        };
+        setAuth(updatedAuth);
+        saveStoredAuth(updatedAuth);
+
+        const database = await loadShopDatabase();
+        if (database) {
+          if (database.products.length > 0) setProducts(database.products);
+          if (database.sales) setSales(database.sales);
+          if (database.shopSettings) setSettings(database.shopSettings);
+        }
+        showToast(`Logged in as ${updatedAuth.user.name}`);
+        return true;
+      }
+
+      throw new Error('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+    } catch (error) {
+      throw error;
+    }
   };
 
   // Logout handler
@@ -97,6 +203,9 @@ export default function App() {
     setAuth(updatedAuth);
     setCurrentTab('home');
     saveStoredAuth(updatedAuth);
+    if (isSupabaseConfigured) {
+      signOut().catch((error) => console.error('Unable to sign out from Supabase:', error));
+    }
     showToast('Logged out successfully', 'info');
   };
 
@@ -108,21 +217,23 @@ export default function App() {
 
   // Handle Complete Sale from Billing
   const handleCompleteSale = (saleData) => {
-    const updatedSales = [saleData, ...sales];
-    handleSaveSales(updatedSales);
+    setSales(previousSales => {
+      const updatedSales = [saleData, ...previousSales];
+      handleSaveSales(updatedSales);
+      return updatedSales;
+    });
 
-    // Deduct stock
-    if (saleData.items && Array.isArray(saleData.items)) {
-      const updatedProducts = products.map(p => {
+    setProducts(previousProducts => {
+      if (!saleData.items || !Array.isArray(saleData.items)) return previousProducts;
+      const updatedProducts = previousProducts.map(p => {
         const itemSold = saleData.items.find(i => i.id === p.id);
-        if (itemSold) {
-          const nextQty = Math.max(0, (Number(p.quantity) || 0) - (Number(itemSold.quantity) || 1));
-          return { ...p, quantity: nextQty, status: nextQty > 0 ? 'In Stock' : 'Out of Stock' };
-        }
-        return p;
+        if (!itemSold) return p;
+        const nextQty = Math.max(0, (Number(p.quantity) || 0) - (Number(itemSold.quantity) || 1));
+        return { ...p, quantity: nextQty, status: nextQty > 0 ? 'In Stock' : 'Out of Stock' };
       });
       handleSaveProducts(updatedProducts);
-    }
+      return updatedProducts;
+    });
 
     showToast(`Invoice #${saleData.invoiceNumber || 'NEW'} recorded successfully!`);
   };
@@ -133,7 +244,7 @@ export default function App() {
   };
 
   return (
-    <div style={{
+    <div className="app-shell" style={{
       display: 'flex',
       minHeight: '100vh',
       backgroundColor: 'var(--bg-app)',
@@ -173,6 +284,7 @@ export default function App() {
 
         {/* Tab Views */}
         <main style={{ padding: '28px 36px', flex: 1 }}>
+          <Suspense fallback={<div style={{ padding: 24, color: 'var(--text-muted)' }}>Loading...</div>}>
           {currentTab === 'home' && (
             <HomeView 
               onNavigateTab={handleNavigateTab}
@@ -240,6 +352,7 @@ export default function App() {
               }}
             />
           )}
+          </Suspense>
         </main>
       </div>
 

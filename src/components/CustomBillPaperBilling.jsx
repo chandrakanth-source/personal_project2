@@ -39,7 +39,8 @@ export default function CustomBillPaperBilling({
   products = [],
   settings = {},
   onCompleteSale,
-  showToast
+  showToast,
+  existingSales = []
 }) {
   // 1. BILL PAPER / LETTERHEAD TEMPLATE
   const [billPaperImage, setBillPaperImage] = useState('/images/sample_letterhead.jpg');
@@ -47,7 +48,9 @@ export default function CustomBillPaperBilling({
   const [topMarginOffset, setTopMarginOffset] = useState(90); // mm offset from top for physical letterhead
 
   // 2. BILL / INVOICE METADATA
-  const [invoiceNumber, setInvoiceNumber] = useState(`STC-${Math.floor(1000 + Math.random() * 9000)}`);
+  const [invoiceNumber, setInvoiceNumber] = useState(
+    `STC-${new Date().getFullYear()}-${String(existingSales.length + 1).padStart(6, '0')}`
+  );
   const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [paymentMode, setPaymentMode] = useState('Cash');
 

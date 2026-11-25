@@ -14,7 +14,6 @@ import {
   X,
   Shield
 } from 'lucide-react';
-import { AUTHORIZED_USERS } from '../data/constants';
 
 export default function LoginModal({
   isOpen,
@@ -29,24 +28,19 @@ export default function LoginModal({
 
   if (!isOpen) return null;
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e?.preventDefault();
     if (!email.trim() || !password) {
       setError('Please enter both email address and password');
       return;
     }
 
-    const trimmedEmail = email.toLowerCase().trim();
-    const userMatch = AUTHORIZED_USERS.find(
-      u => u.email.toLowerCase() === trimmedEmail && u.password === password
-    );
-
-    if (userMatch) {
+    try {
+      await onLoginSuccess(email, password);
       setError('');
-      onLoginSuccess(userMatch);
       onClose();
-    } else {
-      setError('Invalid email address or password. Please try again.');
+    } catch (error) {
+      setError(error.message || 'Invalid email address or password. Please try again.');
     }
   };
 
